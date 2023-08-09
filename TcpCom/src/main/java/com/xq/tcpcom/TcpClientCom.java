@@ -35,25 +35,14 @@ public class TcpClientCom {
                 try {
                     record.socket.connect(new InetSocketAddress(address,port),timeout);
 
-                    if (recordMap.containsKey(businessId)){
-
-                        record.tcpChannel = new TcpChannel(record.socket, new TcpChannel.OnCloseListener() {
-                            @Override
-                            public void onClose() {
-                                containWithRemove();
-                            }
-                        });
-
-                        onConnectListener.onSuccess(record.socket.getLocalPort(),record.tcpChannel);
-
-                    } else {
-                        try {
-                            record.socket.close();
-                        } catch (IOException e){
-                            e.printStackTrace();
+                    record.tcpChannel = new TcpChannel(record.socket, new TcpChannel.OnCloseListener() {
+                        @Override
+                        public void onClose() {
+                            containWithRemove();
                         }
-                    }
+                    });
 
+                    onConnectListener.onSuccess(record.socket.getLocalPort(),record.tcpChannel);
                 } catch (IOException e) {
                     if (containWithRemove()){
                         onConnectListener.onError(e.getMessage(),"");

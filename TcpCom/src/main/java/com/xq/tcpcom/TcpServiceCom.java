@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -46,26 +47,16 @@ public class TcpServiceCom {
 
                         final String client = socket.getInetAddress().getHostAddress()+":"+socket.getPort();
 
-                        if(recordMap.containsKey(businessId)){
-
-                            TcpChannel tcpChannel = new TcpChannel(socket, new TcpChannel.OnCloseListener() {
-                                @Override
-                                public void onClose() {
-                                    containWithRemove();
-                                }
-                            });
-
-                            record.tcpChannelMap.put(client,tcpChannel);
-
-                            onClientConnectListener.OnClientConnect(client, tcpChannel);
-
-                        } else {
-                            try {
-                                socket.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                        TcpChannel tcpChannel = new TcpChannel(socket, new TcpChannel.OnCloseListener() {
+                            @Override
+                            public void onClose() {
+                                containWithRemove();
                             }
-                        }
+                        });
+
+                        record.tcpChannelList.add(tcpChannel);
+
+                        onClientConnectListener.OnClientConnect(socket.getLocalPort(), client, tcpChannel);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -99,8 +90,8 @@ public class TcpServiceCom {
             //
             record.future.cancel(false);
             //
-            if (!record.tcpChannelMap.isEmpty()){
-                for (TcpChannel tcpChannel : record.tcpChannelMap.values()){
+            if (!record.tcpChannelList.isEmpty()){
+                for (TcpChannel tcpChannel : record.tcpChannelList){
                     tcpChannel.close();
                 }
             }
@@ -141,11 +132,11 @@ public class TcpServiceCom {
     private class Record{
         Future<?> future;
         ServerSocket serverSocket;
-        Map<String,TcpChannel> tcpChannelMap = new HashMap<>();
+        List<TcpChannel> tcpChannelList = new ArrayList<>();
     }
 
     public interface OnClientConnectListener{
-        void OnClientConnect(String client, TcpChannel channel);
+        void OnClientConnect(int servicePort, String client, TcpChannel channel);
     }
 
     public interface OnBindCallback{
